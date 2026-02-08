@@ -9,7 +9,7 @@
 
 const CONFIG = {
     // Update this URL when deploying backend
-    API_BASE_URL: 'https://huggingface.co/spaces/prudhvirajchalapaka/Ai-Financial-Analyst-RAG-Model',
+    API_BASE_URL: 'https://prudhvirajchalapaka-ai-financial-analyst-rag-model.hf.space',
     POLLING_INTERVAL: 2000,
     MAX_POLL_ATTEMPTS: 150, // 5 minutes max
 };

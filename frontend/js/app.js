@@ -9,6 +9,7 @@
 
 const CONFIG = {
     // Update this URL when deploying backend
+    // NOTE: Use the direct .hf.space URL, not the huggingface.co/spaces URL
     API_BASE_URL: 'https://prudhvirajchalapaka-ai-financial-analyst-rag-model.hf.space',
     POLLING_INTERVAL: 2000,
     MAX_POLL_ATTEMPTS: 150, // 5 minutes max
@@ -36,7 +37,7 @@ const elements = {
     sidebar: document.getElementById('sidebar'),
     sidebarToggle: document.getElementById('sidebarToggle'),
     mobileMenuBtn: document.getElementById('mobileMenuBtn'),
-    
+
     // Upload
     uploadZone: document.getElementById('uploadZone'),
     uploadContent: document.getElementById('uploadContent'),
@@ -46,26 +47,26 @@ const elements = {
     fileSize: document.getElementById('fileSize'),
     removeFile: document.getElementById('removeFile'),
     processBtn: document.getElementById('processBtn'),
-    
+
     // Status
     statusIndicator: document.getElementById('statusIndicator'),
     statusText: document.getElementById('statusText'),
     statusDetail: document.getElementById('statusDetail'),
-    
+
     // Session
     clearBtn: document.getElementById('clearBtn'),
     sessionInfo: document.getElementById('sessionInfo'),
-    
+
     // Chat
     welcomeMessage: document.getElementById('welcomeMessage'),
     chatMessages: document.getElementById('chatMessages'),
     chatForm: document.getElementById('chatForm'),
     chatInput: document.getElementById('chatInput'),
     sendBtn: document.getElementById('sendBtn'),
-    
+
     // Theme
     themeToggle: document.getElementById('themeToggle'),
-    
+
     // Toast
     toastContainer: document.getElementById('toastContainer'),
 };
@@ -94,31 +95,31 @@ function initializeEventListeners() {
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.removeFile.addEventListener('click', handleRemoveFile);
     elements.processBtn.addEventListener('click', handleProcessPDF);
-    
+
     // Session
     elements.clearBtn.addEventListener('click', handleClearSession);
-    
+
     // Chat
     elements.chatForm.addEventListener('submit', handleChatSubmit);
     elements.chatInput.addEventListener('input', autoResizeTextarea);
     elements.chatInput.addEventListener('keydown', handleChatKeydown);
-    
+
     // Theme
     elements.themeToggle.addEventListener('click', toggleTheme);
-    
+
     // Sidebar
     elements.mobileMenuBtn?.addEventListener('click', () => {
         elements.sidebar.classList.toggle('open');
     });
-    
+
     elements.sidebarToggle?.addEventListener('click', () => {
         elements.sidebar.classList.toggle('open');
     });
-    
+
     // Close sidebar on outside click (mobile)
     document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768 && 
-            !elements.sidebar.contains(e.target) && 
+        if (window.innerWidth <= 768 &&
+            !elements.sidebar.contains(e.target) &&
             !elements.mobileMenuBtn.contains(e.target)) {
             elements.sidebar.classList.remove('open');
         }
@@ -152,7 +153,7 @@ function toggleTheme() {
 function updateThemeIcon() {
     const sunIcon = elements.themeToggle.querySelector('.sun-icon');
     const moonIcon = elements.themeToggle.querySelector('.moon-icon');
-    
+
     if (state.theme === 'dark') {
         sunIcon.classList.add('hidden');
         moonIcon.classList.remove('hidden');
@@ -179,7 +180,7 @@ function handleDragLeave(e) {
 function handleDrop(e) {
     e.preventDefault();
     elements.uploadZone.classList.remove('dragover');
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
         handleFile(files[0]);
@@ -197,9 +198,9 @@ function handleFile(file) {
         showToast('Please select a PDF file', 'error');
         return;
     }
-    
+
     state.selectedFile = file;
-    
+
     // Update UI
     elements.uploadContent.classList.add('hidden');
     elements.fileSelected.classList.remove('hidden');
@@ -229,38 +230,38 @@ function formatFileSize(bytes) {
 
 async function handleProcessPDF() {
     if (!state.selectedFile || state.isProcessing) return;
-    
+
     state.isProcessing = true;
     updateProcessButton(true);
     updateStatus('processing', 'Uploading document...');
-    
+
     try {
         const formData = new FormData();
         formData.append('file', state.selectedFile);
-        
+
         const response = await fetch(`${CONFIG.API_BASE_URL}/api/upload`, {
             method: 'POST',
             body: formData,
         });
-        
+
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.detail || 'Upload failed');
         }
-        
+
         const data = await response.json();
         state.sessionId = data.session_id;
-        
+
         // Save session
         localStorage.setItem('currentSession', JSON.stringify({
             sessionId: state.sessionId,
             fileName: state.selectedFile.name,
             timestamp: Date.now(),
         }));
-        
+
         // Start polling for status
         pollProcessingStatus();
-        
+
     } catch (error) {
         console.error('Upload error:', error);
         showToast(error.message || 'Failed to upload document', 'error');
@@ -272,7 +273,7 @@ async function handleProcessPDF() {
 
 async function pollProcessingStatus() {
     let attempts = 0;
-    
+
     const poll = async () => {
         if (attempts >= CONFIG.MAX_POLL_ATTEMPTS) {
             showToast('Processing timeout. Please try again.', 'error');
@@ -281,18 +282,18 @@ async function pollProcessingStatus() {
             updateStatus('error', 'Processing timeout');
             return;
         }
-        
+
         try {
             const response = await fetch(`${CONFIG.API_BASE_URL}/api/status/${state.sessionId}`);
-            
+
             if (!response.ok) {
                 throw new Error('Failed to get status');
             }
-            
+
             const data = await response.json();
-            
+
             updateStatus(data.status, data.message);
-            
+
             if (data.status === 'ready') {
                 state.isProcessing = false;
                 state.isReady = true;
@@ -302,31 +303,31 @@ async function pollProcessingStatus() {
                 elements.sessionInfo.textContent = `Document: ${data.document_name}`;
                 return;
             }
-            
+
             if (data.status === 'error') {
                 state.isProcessing = false;
                 updateProcessButton(false);
                 showToast(data.message || 'Processing failed', 'error');
                 return;
             }
-            
+
             attempts++;
             setTimeout(poll, CONFIG.POLLING_INTERVAL);
-            
+
         } catch (error) {
             console.error('Polling error:', error);
             attempts++;
             setTimeout(poll, CONFIG.POLLING_INTERVAL);
         }
     };
-    
+
     poll();
 }
 
 function updateProcessButton(loading) {
     const btnText = elements.processBtn.querySelector('.btn-text');
     const btnLoader = elements.processBtn.querySelector('.btn-loader');
-    
+
     if (loading) {
         btnText.textContent = 'Processing...';
         btnLoader.classList.remove('hidden');
@@ -376,18 +377,18 @@ function handleChatKeydown(e) {
 
 async function handleChatSubmit(e) {
     e.preventDefault();
-    
+
     const message = elements.chatInput.value.trim();
     if (!message || !state.isReady) return;
-    
+
     // Add user message to UI
     addMessage('user', message);
     elements.chatInput.value = '';
     autoResizeTextarea();
-    
+
     // Show typing indicator
     const typingId = addTypingIndicator();
-    
+
     try {
         const response = await fetch(`${CONFIG.API_BASE_URL}/api/chat`, {
             method: 'POST',
@@ -399,18 +400,18 @@ async function handleChatSubmit(e) {
                 message: message,
             }),
         });
-        
+
         // Remove typing indicator
         removeTypingIndicator(typingId);
-        
+
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.detail || 'Chat request failed');
         }
-        
+
         const data = await response.json();
         addMessage('assistant', data.answer, data.sources);
-        
+
     } catch (error) {
         removeTypingIndicator(typingId);
         console.error('Chat error:', error);
@@ -422,9 +423,9 @@ async function handleChatSubmit(e) {
 function addMessage(role, content, sources = []) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}`;
-    
+
     const avatarText = role === 'user' ? 'You' : 'AI';
-    
+
     let sourcesHTML = '';
     if (sources && sources.length > 0) {
         sourcesHTML = `
@@ -444,7 +445,7 @@ function addMessage(role, content, sources = []) {
             </div>
         `;
     }
-    
+
     messageDiv.innerHTML = `
         <div class="message-avatar">${avatarText.charAt(0).toUpperCase()}</div>
         <div class="message-content">
@@ -452,7 +453,7 @@ function addMessage(role, content, sources = []) {
             ${sourcesHTML}
         </div>
     `;
-    
+
     elements.chatMessages.appendChild(messageDiv);
     scrollToBottom();
 }
@@ -474,10 +475,10 @@ function addTypingIndicator() {
             </div>
         </div>
     `;
-    
+
     elements.chatMessages.appendChild(typingDiv);
     scrollToBottom();
-    
+
     return id;
 }
 
@@ -519,7 +520,7 @@ function scrollToBottom() {
 
 async function handleClearSession() {
     if (!state.sessionId) return;
-    
+
     try {
         await fetch(`${CONFIG.API_BASE_URL}/api/session/${state.sessionId}`, {
             method: 'DELETE',
@@ -527,17 +528,17 @@ async function handleClearSession() {
     } catch (error) {
         console.error('Error deleting session:', error);
     }
-    
+
     // Reset state
     state.sessionId = null;
     state.isProcessing = false;
     state.isReady = false;
     state.selectedFile = null;
     state.chatHistory = [];
-    
+
     // Clear storage
     localStorage.removeItem('currentSession');
-    
+
     // Reset UI
     elements.uploadContent.classList.remove('hidden');
     elements.fileSelected.classList.add('hidden');
@@ -545,13 +546,13 @@ async function handleClearSession() {
     elements.processBtn.disabled = true;
     elements.clearBtn.disabled = true;
     elements.sessionInfo.textContent = '';
-    
+
     updateStatus('waiting', 'Waiting for document...');
     disableChat();
-    
+
     elements.chatMessages.innerHTML = '';
     elements.welcomeMessage.classList.remove('hidden');
-    
+
     showToast('Session cleared', 'success');
 }
 
@@ -562,14 +563,14 @@ async function handleClearSession() {
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     const iconPaths = {
         success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
         error: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
         warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
         info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     };
-    
+
     toast.innerHTML = `
         <div class="toast-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -583,9 +584,9 @@ function showToast(message, type = 'info') {
             </svg>
         </button>
     `;
-    
+
     elements.toastContainer.appendChild(toast);
-    
+
     // Auto remove after 5 seconds
     setTimeout(() => {
         toast.classList.add('toast-out');

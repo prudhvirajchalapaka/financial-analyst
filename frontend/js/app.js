@@ -127,14 +127,15 @@ function initializeEventListeners() {
 }
 
 function checkExistingSession() {
-    const savedSession = localStorage.getItem('currentSession');
+    // Check session storage (clears on tab close)
+    const savedSession = sessionStorage.getItem('currentSession');
     if (savedSession) {
         try {
             const session = JSON.parse(savedSession);
             state.sessionId = session.sessionId;
             pollProcessingStatus();
         } catch (e) {
-            localStorage.removeItem('currentSession');
+            sessionStorage.removeItem('currentSession');
         }
     }
 }
@@ -252,8 +253,8 @@ async function handleProcessPDF() {
         const data = await response.json();
         state.sessionId = data.session_id;
 
-        // Save session
-        localStorage.setItem('currentSession', JSON.stringify({
+        // Save session (clears when tab closes)
+        sessionStorage.setItem('currentSession', JSON.stringify({
             sessionId: state.sessionId,
             fileName: state.selectedFile.name,
             timestamp: Date.now(),
@@ -537,7 +538,7 @@ async function handleClearSession() {
     state.chatHistory = [];
 
     // Clear storage
-    localStorage.removeItem('currentSession');
+    sessionStorage.removeItem('currentSession');
 
     // Reset UI
     elements.uploadContent.classList.remove('hidden');

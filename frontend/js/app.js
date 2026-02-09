@@ -12,7 +12,7 @@ const CONFIG = {
     // NOTE: Use the direct .hf.space URL, not the huggingface.co/spaces URL
     API_BASE_URL: 'https://prudhvirajchalapaka-ai-financial-analyst-rag-model.hf.space',
     POLLING_INTERVAL: 2000,
-    MAX_POLL_ATTEMPTS: 150, // 5 minutes max
+    MAX_POLL_ATTEMPTS: 450, // 15 minutes max (increased from 5 min)
 };
 
 // =====================================================
